@@ -12,23 +12,43 @@ buildBackend() {
 }
 
 createNetworks() {
-  echo "TODO create networks"
+  docker network create --driver=bridge network-backend
+  docker network create --driver=bridge network-frontend
 }
 
 createVolume() {
-  echo "TODO create volume for postgres"
+  docker volume create postgres-data
 }
 
 runPostgres() {
-  echo "TODO run postgres"
+  docker run -d \
+    --name postgres \
+    -p 5432:5432 \
+    -e POSTGRES_USER=program \
+    -e POSTGRES_PASSWORD=test \
+    -e POSTGRES_DB=todo_list \
+    --volume postgres-data:/var/lib/postgresql/data \
+    --network=network-backend \
+    --network-alias=postgres \
+    postgres:13
 }
 
 runBackend() {
-  echo "TODO run backend"
+  docker run -d \
+  -e SPRING_PROFILES_ACTIVE=docker \
+  --name backend \
+  --network=network-backend \
+  backend:v1.0
+
+  docker network connect --alias backend-service network-frontend backend
 }
 
 runFrontend() {
-  echo "RUN frontend"
+  docker run -d \
+    --name frontend \
+    -p 3000:80 \
+    --network=network-frontend \
+    frontend:v1.0
 }
 
 checkResult() {
